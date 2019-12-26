@@ -99,3 +99,112 @@ var game = {
     this.run();
   }
 };
+
+game.ball = {
+  frame: 0,
+  x: 340,
+  y: 278,
+  velocity: 3,
+  dx: 0,
+  dy: 0,
+  width: 22,
+  height: 22,
+  move: function(){
+    this.x += this.dx;
+    this.y += this.dy;
+  },
+  animate: function(){
+    var self = this;
+    this.animation = setInterval(function(){
+      ++self.frame;
+      self.frame = self.frame % 4;
+    }, 100);
+  },
+  jump: function(){
+    this.dy = this.dx = -this.velocity;
+    this.animate();
+  },
+  collide: function(element) {
+    var x = this.x + this.dx;
+    var y = this.y + this.dy;
+
+    if ( x + this.width > element.x &&
+      x < element.x + element.width &&
+      y + this.height > element.y &&
+      y < element.y + element.height) {
+      return true;
+    }
+    return false;
+  },
+  onTheLeftSide: function(platform) {
+    return (this.x + this.width / 2) < (platform.x + platform.width / 2);
+  },
+  checkBounds: function(){
+    var x = this.x + this.dx;
+    var y = this.y + this.dy;
+
+    if ( x < 0  ) {
+      this.x = 0;
+      this.dx = this.velocity;
+    } else if ( x + this.width > game.width ) {
+      this.x = game.width - this.width;
+      this.dx = -this.velocity;
+    } else if ( y < 0 ) {
+      this.y = 0;
+      this.dy = this.velocity;
+    } else if( this.y + this.height >= game.height ) {
+      this.over('Game Over');
+    }
+  },
+  bumpPuddle: function(platform){
+    this.dy = -this.velocity;
+    this.dx = this.onTheLeftSide(platform) ? -this.velocity : this.velocity;
+  },
+  bumpBlock: function(block){
+    block.isAlive = false;
+    this.dy *= -1;
+    ++game.score;
+    if ( game.score == game.blocks.length ) {
+      this.over('You win!');
+    }
+  },
+  over: function(message) {
+    game.running = false;
+    alert(message);
+    window.location.reload();
+  }
+};
+
+game.platform = {
+  x: 300,
+  y: 300,
+  dx: 0,
+  velocity: 6,
+  width: 104,
+  height: 24,
+  ball: game.ball,
+  stop: function(){
+    this.dx = 0;
+
+    if ( this.ball ) {
+      this.ball.dx = 0;
+    }
+  },
+  move: function(){
+    this.x += this.dx;
+
+    if ( this.ball ) {
+      this.ball.x += this.dx;
+    }
+  },
+  releaseBall: function(){
+    if ( this.ball ) {
+      this.ball.jump();
+      this.ball = false;
+    }
+  }
+};
+
+window.addEventListener("load",function() {
+  game.start();
+});
